@@ -45,7 +45,8 @@ def fxgithub(subpath):
     print(create_image)
     basefile = file.split("/")[-1]
     argstring = (f"Lines {lines[0]}-{lines[1]} of {basefile} from {author}/{repo}@{branch}:\n\n")
-    return render_template('default.html', img=("http://gh.universe.dog/static/img/" + imagefile.split("/")[-1] + ".png"), message=argstring, original=githuburl)
+    return render_template('default.html', img=("https://fxgithub.com/static/img/" + imagefile.split("/")[-1] + ".png"), message=argstring, original=githuburl)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.config['SERVER_NAME']='localhost:80'
+    app.run(host='0.0.0.0', port=80)
