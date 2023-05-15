@@ -5,13 +5,14 @@ An attempt to make discord embeds of github snippets a little nicer
 
 # HOW TO USE:
 1. Go to the page of a file you'd like to share some code of
-2. Shift+Click what the first line-number of snipped you'd like to share is
-3. Shift+Click the last line-number of the snippet you'd like to share
-4. In your url bar you should have a link ending in, for example, #L1-L51
-5. Copy this url, paste it into discord
-6. Change github.com to fxgithub.com and change that last # to a ?
-7. Paste
-8. Image Get!!
+2. If you just want to embed the whole file, just copy the url and paste it with fx
+3. If you want specific lines, shift+click what the first line-number of snipped you'd like to share is
+4. Shift+click the last line-number of the snippet you'd like to share
+5. In your url bar you should have a link ending in, for example, #L1-L51
+6. Copy this url, paste it into discord
+7. Change github.com to fxgithub.com and change that last # to a ?
+8. Paste
+9. Image Get!!
 
 This server uses `carbon-now-cli` in order to create a pretty, syntax-highlighted preview image of your desired code
 
