@@ -14,7 +14,7 @@ app.config['SERVER_NAME'] = 'fxgithub.com'
 
 logging.basicConfig(level=logging.DEBUG, filename='fxgithub.log', filemode='w', format='%(message)s')
 badfiles = ".tar"
-notes = ""
+
 
 col = {
     "red"       : "\033[91m",
@@ -35,6 +35,7 @@ def gist_home():
 
 @app.route('/<path:subpath>', subdomain="gist")
 def gist_subpath(subpath):
+    notes = ""
     splitpath = subpath.split("/")
     try:
         if len(splitpath) == 1:
@@ -74,7 +75,13 @@ def gist_subpath(subpath):
             f.write(r)
 
     try:
-        lines       = (list(request.args.keys())[0]).replace("L","").split("-")
+        if "-" in list(request.args.keys())[0]:
+            lines       = (list(request.args.keys())[0]).replace("L","").split("-")
+        else:
+            lines[0]       = (list(request.args.keys())[0]).replace("L","")
+            lines[1]       = lines[0]
+            logging.info(f"{col['green']} [ >>> INFO: ] Only one line ({lines[0]}) designated in arguments {col['reset']}")
+
         if int(lines[1]) > int(lines[0]) + 150:
             logging.warning(f"{col['red']} [ !!! ERROR: ] More than 150 lines requested. truncating... {col['reset']}" )
             notes = "More than 150 lines requested. truncating..."
@@ -102,29 +109,51 @@ def gist_subpath(subpath):
 
 @app.route('/<path:subpath>')
 def fxgithub(subpath):
-
+    notes = ""
+    barerepo = "False"
+    pushdate = "UNKNOWN_DATE"
     splitpath = subpath.split("/")
     logging.info(f"{col['green']} [ >>> REQUEST: ] {subpath} {col['reset']}")
     try:
         author  = splitpath[0]
         repo    = splitpath[1]
-        action  = splitpath[2]
-        branch  = splitpath[3]
-        file    = '/'.join(splitpath[4:])
+        # Get info from the github api
+        try:
+            repoapiurl  = "https://api.github.com/repos/" + author + "/" + repo
+            repoinfo    = requests.get(repoapiurl).json()
+            branch      = repoinfo['default_branch']
+            pushdate    = repoinfo['pushed_at']
+            logging.debug(repoinfo)
+        except:
+            logging.warning(f"{col['red']} [ !!! ERROR: ] API failure on {author} repo {repo} {col['reset']}" )
+            return render_template('default.html', message="Github API failed to return a valid response for this repo.")
+        try:
+            action  = splitpath[2]
+            branch  = splitpath[3]
+            file    = '/'.join(splitpath[4:])
+        except:
+            barerepo = True 
     except:
         logging.warning(f"{col['red']} [ !!! ERROR: ] {subpath} is not a valid github link {col['reset']}" )
         return render_template('default.html', message="Please specify a github link with the format /author/repo/action/branch/file")
 
+    if barerepo == True:
+        action      = "blob"
+        file        = "readme.md"
+        rawfileurl = ("https://raw.githubusercontent.com/" + author  + "/" + repo + "/" + branch + "/" + "README.md")
+        codefile    = ("/home/robin/fxgithub/static/code/" + author + "_" + repo + "_" + branch + "_"  + pushdate + "_" + "README.md")
+        basefile    = "readme.md"
+    else:
+        rawfileurl  = ("https://raw.githubusercontent.com/" + author  + "/" + repo + "/" + branch  + "/" + file)
+        codefile    = ("/home/robin/fxgithub/static/code/" + author + "_" + repo + "_" + branch + "_" + pushdate + "_" + file.split("/")[-1])
+        basefile    = file.split("/")[-1]
+
     if badfiles in file:
         logging.warning(f"{col['red']} [ !!! ERROR: ] {subpath} idiot detection system engaged {col['reset']}" )
-        return render_template('default.html', message="Goodnight")
+        return render_template('default.html', message="unsupported filetype")
 
     if action != "blob":
         return render_template('default.html', message="Please specify a file with the blob action, e.g. /RobinUniverse/FXGithub/blob/main/twitfix.py")
-
-    rawfileurl  = ("https://raw.githubusercontent.com/" + author  + "/" + repo + "/" + branch + "/" + file)
-    codefile    = ("/home/robin/fxgithub/static/code/" + author + "_" + repo + "_" + branch + "_" + file.split("/")[-1])
-    basefile    = file.split("/")[-1]
 
     if os.path.isfile( codefile ):
         logging.warning(f"{col['blue']} [ !!! CACHE: ] {basefile} already exists locally {col['reset']}" )
@@ -137,26 +166,33 @@ def fxgithub(subpath):
             f.write(r)
 
     try:
-        if "-" in list(request.args.keys())[0]:
-            lines       = (list(request.args.keys())[0]).replace("L","").split("-")
+        lines = [ "1", "1"]
+        lineargs = list(request.args.keys())[0]
+        logging.debug(f"{col['green']} [ >>> DEBUG: ] {lineargs} {col['reset']}")
+        if "-" in lineargs:
+            lines       = lineargs.replace("L","").split("-")
+            logging.debug(f"{col['green']} [ >>> DEBUG: ] - detected in args {col['reset']}")
         else:
-            lines[0]       = (list(request.args.keys())[0]).replace("L","")
-            lines[1]       = lines[0]
-            
+            lines[0]       = lineargs.replace("L","")
+            lines[1]       = lineargs.replace("L","")
+            logging.info(f"{col['green']} [ >>> INFO: ] Only one line ({lines[0]}) designated in arguments {col['reset']}")
+
         if int(lines[1]) > int(lines[0]) + 150:
             logging.warning(f"{col['red']} [ !!! ERROR: ] More than 150 lines requested. truncating... {col['reset']}" )
             notes = "More than 150 lines requested. truncating..."
             lines[1] = str(int(lines[0]) + 150)
         logging.info(f"{col['green']} [ >>> SERVING: ] {author}/{repo}@{branch} {file} L{str(lines[0])}-{lines[1]} {col['reset']}")
-    except:
+    except Exception as e:
         lines       = ["1", str(len(str(r).split('\n')))]
         if int(lines[1]) > int(lines[0]) + 150:
             logging.warning(f"{col['red']} [ !!! ERROR: ] More than 150 lines requested. truncating... {col['reset']}" )
             notes = "More than 150 lines requested. truncating..."
             lines[1] = str(int(lines[0]) + 150)
-        logging.warning(f"{col['red']} [ !!! ERROR: ] Failed to read line number argument. Setting to length of document. (L{lines[0]}-{lines[1]}) {col['reset']}" )
 
-    imagefile   = ("/home/robin/fxgithub/static/img/" + author + "_" + repo + "_" + branch + "_" + file.split("/")[-1].split(".")[0] + "_" + "L" + lines[0] + "-" + lines[1] + ".png" )
+        logging.warning(f"{col['red']} [ !!! ERROR: ] Failed to read line number argument. Setting to length of document. (L{lines[0]}-{lines[1]}) {col['reset']}" )
+        logging.warning(f"{col['red']} [ !!! ERROR: ] {e} {col['reset']}" )
+
+    imagefile   = ("/home/robin/fxgithub/static/img/" + author + "_" + repo + "_" + branch + "_" + pushdate + "_" + file.split("/")[-1].split(".")[0] + "_" + "L" + lines[0] + "-" + lines[1] + ".png" )
     githuburl   = ("https://github.com/" + author + "/" + repo + "/" + action + "/" + branch + "/" + file + "#L" + lines[0] + "-L" + lines[1])
 
     if os.path.isfile( imagefile ):
@@ -167,7 +203,11 @@ def fxgithub(subpath):
 
     logging.info(f"{col['green']} [ >>> SERVING: ] {author}/{repo}@{branch} {file} L{lines[0]}-{lines[1]} {col['reset']}")
 
-    argstring = (f"Lines {lines[0]}-{lines[1]} of {basefile} from {author}/{repo}@{branch}:\n\n{notes}\n\n")
+    if lines[0] == lines[1]:
+        argstring = (f"Line {lines[0]} of {basefile} from {author}/{repo}@{branch}:\n\n{notes}\n\n")
+    else:
+        argstring = (f"Lines {lines[0]}-{lines[1]} of {basefile} from {author}/{repo}@{branch}:\n\n{notes}\n\n")
+
     return render_template('default.html', img=("https://fxgithub.com/static/img/" + imagefile.split("/")[-1]), message=argstring, original=githuburl)
 
 @app.route('/favicon.ico')
