@@ -15,6 +15,9 @@ app.config['SERVER_NAME'] = 'fxgithub.com'
 logging.basicConfig(level=logging.DEBUG, filename='fxgithub.log', filemode='w', format='%(message)s')
 badfiles = ".tar"
 
+@app.route('/')
+def default():
+    return render_template("mainsite.html", img="https://fxgithub.com/static/img/robinuniverse_fxgithub_main_2023-05-16T22:36:17Z_README_L1-41.png")
 
 col = {
     "red"       : "\033[91m",
@@ -123,9 +126,9 @@ def fxgithub(subpath):
             repoinfo    = requests.get(repoapiurl).json()
             branch      = repoinfo['default_branch']
             pushdate    = repoinfo['pushed_at']
-            logging.debug(repoinfo)
+            logging.debug(f"{col['blue']} [ !!! API: ] {author} repo {repo} last pushed at {pushdate} {col['reset']}")
         except:
-            logging.warning(f"{col['red']} [ !!! ERROR: ] API failure on {author} repo {repo} {col['reset']}" )
+            logging.warning(f"{col['red']} [ !!! API: ] API failure on {author} repo {repo} {col['reset']}" )
             return render_template('default.html', message="Github API failed to return a valid response for this repo.")
         try:
             action  = splitpath[2]
@@ -139,10 +142,10 @@ def fxgithub(subpath):
 
     if barerepo == True:
         action      = "blob"
-        file        = "readme.md"
+        file        = "README.md"
         rawfileurl = ("https://raw.githubusercontent.com/" + author  + "/" + repo + "/" + branch + "/" + "README.md")
         codefile    = ("/home/robin/fxgithub/static/code/" + author + "_" + repo + "_" + branch + "_"  + pushdate + "_" + "README.md")
-        basefile    = "readme.md"
+        basefile    = "README.md"
     else:
         rawfileurl  = ("https://raw.githubusercontent.com/" + author  + "/" + repo + "/" + branch  + "/" + file)
         codefile    = ("/home/robin/fxgithub/static/code/" + author + "_" + repo + "_" + branch + "_" + pushdate + "_" + file.split("/")[-1])
@@ -160,8 +163,25 @@ def fxgithub(subpath):
         with open( codefile ) as f:
             r = f.read()
     else:
-        logging.info(f"\033[94m [ !!! FRESH: ] {basefile} doesn't exist locally, downloading from github... {col['reset']}")
-        r = (requests.get(rawfileurl)).text
+        logging.info(f"{col['blue']} [ !!! FRESH: ] {basefile} doesn't exist locally, downloading from github... {col['reset']}")
+        resp = (requests.get(rawfileurl))
+        if resp.status_code == 200:
+            r = resp.text
+        else:
+            logging.warning(f"{col['red']} [ !!! ERROR: ] {rawfileurl} failed to download from github {col['reset']}" )
+            logging.warning(f"{col['red']} [ !!! ERROR: ] {e} {col['reset']}" )
+            if "README.md" in rawfileurl:
+                logging.warning(f"{col['blue']} [ !!! INFO: ] Trying 'readme.md' instead... {col['reset']}" )
+                resp = (requests.get(rawfileurl.replace("README.md","readme.md")))
+                if resp.status_code == 200:
+                    r = resp.text
+                else:
+                    logging.warning(f"{col['red']} [ !!! ERROR: ] {rawfileurl} failed to download from github {col['reset']}" )
+                    logging.warning(f"{col['red']} [ !!! ERROR: ] {e} {col['reset']}" )
+                    return render_template('default.html', message="Failed to download file from github")
+            else:
+                return render_template('default.html', message="Failed to download file from github.")
+            
         with open(codefile, "w+") as f:
             f.write(r)
 
