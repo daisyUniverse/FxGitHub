@@ -28,7 +28,7 @@ note: seems obvious, but this service doesn't have access to private repositorie
 
 This server uses `carbon-now-cli` in order to create a pretty, syntax-highlighted preview image of your desired code
 
-There is still much work to be done! For example, I have yet to support sending the entire file without the L arguments, and I have not yet implemented a way to parse specific characters (this shows up as C arguments in the URL, and won't work)
+There is still much work to be done! For example, I have not yet implemented a way to parse specific characters (this shows up as C arguments in the URL, and won't work)
 
 This is just a for-fun project, and I do not hold myself liable to keep this up and running forever
 
