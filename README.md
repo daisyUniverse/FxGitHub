@@ -1,7 +1,8 @@
 # FxGithub
 An attempt to make discord embeds of github snippets and gists a little nicer
 
-![image](https://github.com/robinuniverse/FxGitHub/assets/12601774/2484bfd7-dff2-4eb7-b926-b615312c753f)
+![image](https://github.com/robinuniverse/FxGitHub/assets/12601774/a1cef521-2481-4a2d-86f3-9b7590b0a454)
+
 
 # HOW TO USE:
 1. Go to the page of a file you'd like to share some code of
@@ -19,7 +20,7 @@ note: seems obvious, but this service doesn't have access to private repositorie
 ## some tidbits
 - Works with github gists ( you must provide the author in the url )
 - Automatically rejects anything the github api can't access
-- The maximum number of lines is 150, if you try to include more than 150 lines, it will truncate the request to simply be 150 lines past the starting point
+- The maximum number of lines is 70, if you try to include more than 70 lines, it will truncate the request to simply be 70 lines past the starting point
 - If you provide only a filename, it will try to display the entire file ( or at least the first 150 lines of it )
 - If you try to use this on a repo base url, it will try to display the readme of whatever the main branch of the repo is
 - This works with single-line arguments
@@ -38,3 +39,6 @@ I save the code passed through the service and images generated for caching purp
 
 
 Licensed under the [Do What The Fuck You Want Except Use NFTs Public License](https://github.com/robinuniverse/wtfnonpl)
+
+# How to run this yourself
+I barely know how I run it myself to be quite honest with you. Good luck!
